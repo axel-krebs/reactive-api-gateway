@@ -1,0 +1,90 @@
+plugins {
+    id 'application'
+    id 'org.jetbrains.kotlin.jvm' version '1.8.21'
+    id 'org.graalvm.buildtools.native'
+    id 'org.springframework.boot' version '3.0.6'
+    id "io.spring.dependency-management" version "1.1.0"
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    junitVersion = '5.9.3'
+}
+
+dependencies {
+    //implementation("org.graalvm.internal:library-with-reflection:1.5")
+    implementation platform('org.jetbrains.kotlin:kotlin-bom')
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib'
+    implementation(platform("io.projectreactor:reactor-bom:2022.0.6"))
+    implementation("io.projectreactor.netty:reactor-netty-core")
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation ("org.springframework.boot:spring-boot-devtools")
+    implementation("org.springframework.boot:spring-boot-starter")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    //implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    //implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    //runtimeOnly("com.h2database:h2")
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation(platform("org.junit:junit-bom:${junitVersion}"))
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.jetbrains.kotlin:kotlin-test'
+}
+
+sourceSets {
+    main.java.srcDirs += './src/main/java'
+    main.kotlin.srcDirs += './src/main/kotlin'
+}
+
+tasks.withType(Jar).configureEach {
+    from sourceSets.main.output
+    from sourceSets.main.kotlin.destinationDirectory
+}
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of('17'))
+    }
+}
+
+graalvmNative {
+    agent {
+        defaultMode = "standard"
+    }
+    binaries {
+        main {
+            imageName.set('edifaas')
+            mainClass = 'de.akrebs.proto.edifact.EdifactReactiveServerApplication'
+            debug = true // Determines if debug info should be generated, defaults to false
+            verbose = true // Add verbose output, defaults to false
+            fallback = true // Sets the fallback mode of native-image, defaults to false
+            sharedLibrary = false
+            useFatJar = true
+        }
+    }
+//    metadataRepository {
+//        enabled = true
+//    }
+    toolchainDetection = false
+
+//    metadataRepository {
+//        enabled = true
+//        def extension = System.getProperty("extension", '')
+//        def repo = file("config-directory${extension ? '.' + extension : ''}")
+//        println("Using config repo: $repo")
+//        uri(repo)
+//    }
+
+//    binaries.all {
+//        verbose = true
+//        runtimeArgs.add("-DmessageClass=org.graalvm.internal.reflect.Message")
+//        excludeConfig.put("org.graalvm.internal:library-with-reflection:1.5", [".*"])
+//        excludeConfig.put(file("test.jar"), ["META-INF/*"])
+//    }
+}
